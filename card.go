@@ -16,7 +16,7 @@ import (
 func main() {
 	args := os.Args[1:]
 
-	if len(args) < 16 {
+	if len(args) < 17 {
 		fmt.Print(`Invalid arguments!`)
 		return
 	}
@@ -98,11 +98,13 @@ func main() {
 		return
 	}
 
-	Draw(name, serial, hasGroup, idolImage, groupImage, frameImage, maskImage, cardId, colorR, colorG, colorB, large, font, textColorR, textColorG, textColorB)
+	outPath := args[16]
+
+	Draw(name, serial, hasGroup, idolImage, groupImage, frameImage, maskImage, cardId, colorR, colorG, colorB, large, font, textColorR, textColorG, textColorB, outPath)
 
 }
 
-func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage string, frameImage string, maskImage string, cardId int, colorR int, colorG int, colorB int, large bool, font string, textColorR int, textColorG int, textColorB int) error {
+func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage string, frameImage string, maskImage string, cardId int, colorR int, colorG int, colorB int, large bool, font string, textColorR int, textColorG int, textColorB int, outPath string) error {
 	start := time.Now()
 
 	var sizeX int
@@ -250,7 +252,7 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 
 	}
 
-	dc.SavePNG(`./output.png`)
+	dc.SavePNG(outPath)
 
 	duration := time.Since(start)
 	fmt.Print(duration)
