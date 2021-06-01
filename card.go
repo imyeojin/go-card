@@ -98,13 +98,20 @@ func main() {
 		return
 	}
 
-	outPath := args[16]
+	overlay, err := strconv.ParseBool(args[16])
 
-	Draw(name, serial, hasGroup, idolImage, groupImage, frameImage, maskImage, cardId, colorR, colorG, colorB, large, font, textColorR, textColorG, textColorB, outPath)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	outPath := args[17]
+
+	Draw(name, serial, hasGroup, idolImage, groupImage, frameImage, maskImage, cardId, colorR, colorG, colorB, large, font, textColorR, textColorG, textColorB, outPath, overlay)
 
 }
 
-func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage string, frameImage string, maskImage string, cardId int, colorR int, colorG int, colorB int, large bool, font string, textColorR int, textColorG int, textColorB int, outPath string) error {
+func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage string, frameImage string, maskImage string, cardId int, colorR int, colorG int, colorB int, large bool, font string, textColorR int, textColorG int, textColorB int, outPath string, overlay bool) error {
 	start := time.Now()
 
 	var sizeX int
