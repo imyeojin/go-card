@@ -121,11 +121,11 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 	dc := gg.NewContext(sizeX, sizeY)
 
 	nameSize := 30.0
-	serialSize := 20.0
+	// serialSize := 20.0
 
 	if large {
 		nameSize *= 2.2
-		serialSize *= 2.2
+		// serialSize *= 2.2
 	}
 
 	err := dc.LoadFontFace(font, nameSize)
@@ -181,22 +181,22 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		}
 	}
 
-	idolOffsetX := 47.0
-	idolOffsetY := 54.0
+	idolOffsetX := 48.0
+	idolOffsetY := 54.5
 
 	if large {
 		idolOffsetX *= 2.2
-		idolOffsetY *= 2.2
+		idolOffsetY = 120
 	}
 
 	dc.DrawImage(idol, int(math.Floor(idolOffsetX)), int(math.Floor(idolOffsetY)))
 	dc.DrawImage(frame, 0, 0)
 	dc.DrawImage(mask, 0, -1)
 
-	dc.SetRGB(float64(textColorR/255), float64(textColorG), float64(textColorB))
+	dc.SetRGB(float64(textColorR/255), float64(textColorG/255), float64(textColorB/255))
 
 	textX := 50.0
-	nameY := 445.0
+	nameY := 436.0
 	serialY := 421.0
 
 	if large {
@@ -207,7 +207,7 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 
 	dc.DrawString(name, textX, nameY)
 
-	err = dc.LoadFontFace(font, serialSize)
+	/* err = dc.LoadFontFace(font, serialSize)
 
 	if err != nil {
 		log.Fatal(err)
@@ -215,6 +215,7 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 	}
 
 	dc.DrawString("#"+strconv.Itoa(serial), textX, serialY)
+	*/
 
 	if hasGroup {
 		groupCacheLoc := "./cache/groups/" + _cardId
@@ -233,7 +234,7 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 			}
 
 		} else if os.IsNotExist(err) {
-			err = exec.Command("convert", groupImage, "-fill", "rgb("+strconv.Itoa(textColorR)+","+strconv.Itoa(textColorG)+","+strconv.Itoa(textColorB)+")", "-colorize", "100", groupCacheLoc).Run()
+			err = exec.Command("convert", groupImage, "-channel", "RGB", "-negate", "-fill", "rgb("+strconv.Itoa(textColorR)+","+strconv.Itoa(textColorG)+","+strconv.Itoa(textColorB)+")", "-colorize", "100", groupCacheLoc).Run()
 
 			if err != nil {
 				log.Fatal(err)
@@ -250,9 +251,12 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 
 		dc.DrawImage(group, 0, 0)
 
+		os.Remove(groupCacheLoc)
+
 	}
 
 	dc.SavePNG(outPath)
+	os.Remove(dyeUrl)
 
 	duration := time.Since(start)
 	fmt.Print(duration)
