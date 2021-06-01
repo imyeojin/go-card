@@ -197,8 +197,14 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 	}
 
 	dc.DrawImage(idol, int(math.Floor(idolOffsetX)), int(math.Floor(idolOffsetY)))
-	dc.DrawImage(frame, 0, 0)
-	dc.DrawImage(mask, 0, -1)
+
+	if overlay {
+		dc.DrawImage(mask, 0, -1)
+		dc.DrawImage(frame, 0, -1)
+	} else {
+		dc.DrawImage(frame, 0, 0)
+		dc.DrawImage(mask, 0, -1)
+	}
 
 	dc.SetRGB(float64(textColorR/255), float64(textColorG/255), float64(textColorB/255))
 
