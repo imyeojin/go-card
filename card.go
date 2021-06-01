@@ -47,21 +47,21 @@ func main() {
 		return
 	}
 
-	colorR, err := strconv.Atoi(args[8])
+	colorC, err := strconv.ParseFloat(args[8], 64)
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	colorG, err := strconv.Atoi(args[9])
+	colorM, err := strconv.ParseFloat(args[9], 64)
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	colorB, err := strconv.Atoi(args[10])
+	colorY, err := strconv.ParseFloat(args[10], 64)
 
 	if err != nil {
 		log.Fatal(err)
@@ -107,11 +107,11 @@ func main() {
 
 	outPath := args[17]
 
-	Draw(name, serial, hasGroup, idolImage, groupImage, frameImage, maskImage, cardId, colorR, colorG, colorB, large, font, textColorR, textColorG, textColorB, outPath, overlay)
+	Draw(name, serial, hasGroup, idolImage, groupImage, frameImage, maskImage, cardId, colorC, colorM, colorY, large, font, textColorR, textColorG, textColorB, outPath, overlay)
 
 }
 
-func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage string, frameImage string, maskImage string, cardId int, colorR int, colorG int, colorB int, large bool, font string, textColorR int, textColorG int, textColorB int, outPath string, overlay bool) error {
+func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage string, frameImage string, maskImage string, cardId int, colorC float64, colorM float64, colorY float64, large bool, font string, textColorR int, textColorG int, textColorB int, outPath string, overlay bool) error {
 	start := time.Now()
 
 	var sizeX int
@@ -173,7 +173,7 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		}
 
 	} else if os.IsNotExist(err) {
-		err = exec.Command("convert", maskImage, "-fill", "rgb("+strconv.Itoa(colorR)+","+strconv.Itoa(colorG)+","+strconv.Itoa(colorB)+")", "-colorize", "100", dyeUrl).Run()
+		err = exec.Command("convert", maskImage /*"-fill", "rgb("+strconv.Itoa(colorR)+","+strconv.Itoa(colorG)+","+strconv.Itoa(colorB)+")", */, "-colorize", fmt.Sprintf("%f", colorC)+","+fmt.Sprintf("%f", colorM)+","+fmt.Sprintf("%f", colorY), dyeUrl).Run()
 
 		if err != nil {
 			log.Fatal(err)
