@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"log"
@@ -8,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"time"
 
 	"github.com/fogleman/gg"
 )
@@ -112,7 +112,6 @@ func main() {
 }
 
 func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage string, frameImage string, maskImage string, cardId int, colorC float64, colorM float64, colorY float64, large bool, font string, textColorR int, textColorG int, textColorB int, outPath string, overlay bool) error {
-	start := time.Now()
 
 	var sizeX int
 	var sizeY int
@@ -156,36 +155,18 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		return err
 	}
 
-	var mask image.Image
-	_cardId := strconv.Itoa(cardId)
-	dyeUrl := "./cache/masks/" + _cardId
+	buff, err := exec.Command("convert", maskImage, "-colorize", fmt.Sprintf("%f", colorC)+","+fmt.Sprintf("%f", colorM)+","+fmt.Sprintf("%f", colorY), "png:-").Output()
 
-	if !large {
-		dyeUrl += "_small"
+	if err != nil {
+		log.Fatal(err)
+		return err
 	}
 
-	if _, err := os.Stat(dyeUrl); err == nil {
-		mask, err = gg.LoadImage(dyeUrl)
+	mask, _, err := image.Decode(bytes.NewReader(buff))
 
-		if err != nil {
-			log.Fatal(err)
-			return err
-		}
-
-	} else if os.IsNotExist(err) {
-		err = exec.Command("convert", maskImage /*"-fill", "rgb("+strconv.Itoa(colorR)+","+strconv.Itoa(colorG)+","+strconv.Itoa(colorB)+")", */, "-colorize", fmt.Sprintf("%f", colorC)+","+fmt.Sprintf("%f", colorM)+","+fmt.Sprintf("%f", colorY), dyeUrl).Run()
-
-		if err != nil {
-			log.Fatal(err)
-			return err
-		}
-
-		mask, err = gg.LoadImage(dyeUrl)
-
-		if err != nil {
-			log.Fatal(err)
-			return err
-		}
+	if err != nil {
+		log.Fatal(err)
+		return err
 	}
 
 	idolOffsetX := 48.0
@@ -220,58 +201,32 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 
 	dc.DrawString(name, textX, nameY)
 
-	/* err = dc.LoadFontFace(font, serialSize)
-
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	dc.DrawString("#"+strconv.Itoa(serial), textX, serialY)
-	*/
-
 	if hasGroup {
-		groupCacheLoc := "./cache/groups/" + _cardId
-		var group image.Image
+		groupImage, err := exec.Command("convert", groupImage, "-channel", "RGB", "-negate", "-fill", "rgb("+strconv.Itoa(textColorR)+","+strconv.Itoa(textColorG)+","+strconv.Itoa(textColorB)+")", "-colorize", "100", "png:-").Output()
 
-		if !large {
-			groupCacheLoc += "_small"
+		if err != nil {
+			log.Fatal(err)
+			return err
 		}
 
-		if _, err := os.Stat(groupCacheLoc); err == nil {
-			group, err = gg.LoadImage(groupCacheLoc)
+		groupBytes, _, err := image.Decode(bytes.NewReader(groupImage))
 
-			if err != nil {
-				log.Fatal(err)
-				return err
-			}
-
-		} else if os.IsNotExist(err) {
-			err = exec.Command("convert", groupImage, "-channel", "RGB", "-negate", "-fill", "rgb("+strconv.Itoa(textColorR)+","+strconv.Itoa(textColorG)+","+strconv.Itoa(textColorB)+")", "-colorize", "100", groupCacheLoc).Run()
-
-			if err != nil {
-				log.Fatal(err)
-				return err
-			}
-
-			group, err = gg.LoadImage(groupCacheLoc)
-
-			if err != nil {
-				log.Fatal(err)
-				return err
-			}
-		}
-
-		dc.DrawImage(group, 0, 0)
-
-		os.Remove(groupCacheLoc)
+		dc.DrawImage(groupBytes, 0, 0)
 
 	}
 
 	dc.SavePNG(outPath)
-	os.Remove(dyeUrl)
 
-	duration := time.Since(start)
-	fmt.Print(duration)
+	buf := new(bytes.Buffer)
+
+	err = dc.EncodePNG(buf)
+
+	fmt.Println(buf.Bytes())
+
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+
 	return nil
 }
