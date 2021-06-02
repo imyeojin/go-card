@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"image"
+	"image/png"
 	"log"
 	"math"
 	"os"
@@ -215,13 +217,19 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 
 	}
 
+	writer := new(bytes.Buffer)
+
+	err = png.Encode(writer, dc.Image())
+
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+
+	data := base64.StdEncoding.EncodeToString(writer.Bytes())
+
 	dc.SavePNG(outPath)
-
-	buf := new(bytes.Buffer)
-
-	err = dc.EncodePNG(buf)
-
-	fmt.Println(buf.Bytes())
+	fmt.Printf("%v", data)
 
 	if err != nil {
 		log.Fatal(err)
