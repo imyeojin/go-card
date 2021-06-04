@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+	// Parses command line arguments
 	args := os.Args[1:]
 
 	if len(args) < 17 {
@@ -23,98 +24,101 @@ func main() {
 		return
 	}
 
+	// The idol's name
 	name := args[0]
-	serial, err := strconv.Atoi(args[1])
+
+	// Whether or not the group image exists (if true, it's a soloist)
+	hasGroup, err := strconv.ParseBool(args[1])
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	hasGroup, err := strconv.ParseBool(args[2])
+	idolImage := args[2]  // Path to the image of the idol
+	groupImage := args[3] // Path to the image of the group logo
+	frameImage := args[4] // Path to the frame image
+	maskImage := args[5]  // Path to the dye image
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	idolImage := args[3]
-	groupImage := args[4]
-	frameImage := args[5]
-	maskImage := args[6]
-	cardId, err := strconv.Atoi(args[7])
+	// CMY color for the dye
+	colorC, err := strconv.ParseFloat(args[6], 64)
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	colorC, err := strconv.ParseFloat(args[8], 64)
+	colorM, err := strconv.ParseFloat(args[7], 64)
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	colorM, err := strconv.ParseFloat(args[9], 64)
+	colorY, err := strconv.ParseFloat(args[8], 64)
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	colorY, err := strconv.ParseFloat(args[10], 64)
+	// Large or small card (large = 770x1100, small = 350x500)
+	large, err := strconv.ParseBool(args[9])
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	large, err := strconv.ParseBool(args[11])
+	// Path to the font file to use for the text
+	font := args[10]
+
+	// RGB color for the text
+	textColorR, err := strconv.Atoi(args[11])
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	font := args[12]
-
-	textColorR, err := strconv.Atoi(args[13])
+	textColorG, err := strconv.Atoi(args[12])
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	textColorG, err := strconv.Atoi(args[14])
+	textColorB, err := strconv.Atoi(args[13])
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	textColorB, err := strconv.Atoi(args[15])
+	// Whether or not to overlay the dye image onto the frame or vice versa (true = frame over dye)
+	overlay, err := strconv.ParseBool(args[14])
 
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	overlay, err := strconv.ParseBool(args[16])
+	// The path where the card image will be saved to
+	outPath := args[15]
 
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	outPath := args[17]
-
-	Draw(name, serial, hasGroup, idolImage, groupImage, frameImage, maskImage, cardId, colorC, colorM, colorY, large, font, textColorR, textColorG, textColorB, outPath, overlay)
+	// Draw the actual image
+	Draw(name, hasGroup, idolImage, groupImage, frameImage, maskImage, colorC, colorM, colorY, large, font, textColorR, textColorG, textColorB, outPath, overlay)
 
 }
 
-func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage string, frameImage string, maskImage string, cardId int, colorC float64, colorM float64, colorY float64, large bool, font string, textColorR int, textColorG int, textColorB int, outPath string, overlay bool) error {
+func Draw(name string, hasGroup bool, idolImage string, groupImage string, frameImage string, maskImage string, colorC float64, colorM float64, colorY float64, large bool, font string, textColorR int, textColorG int, textColorB int, outPath string, overlay bool) error {
 
+	// Size of the card image, including blank space
 	var sizeX int
 	var sizeY int
 
@@ -126,16 +130,17 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		sizeY = 500
 	}
 
+	// Creates a blank image
 	dc := gg.NewContext(sizeX, sizeY)
 
+	// Text size
 	nameSize := 30.0
-	// serialSize := 20.0
 
 	if large {
 		nameSize *= 2.2
-		// serialSize *= 2.2
 	}
 
+	// Load font from the path
 	err := dc.LoadFontFace(font, nameSize)
 
 	if err != nil {
@@ -143,6 +148,7 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		return err
 	}
 
+	// Load idol image from the path
 	idol, err := gg.LoadImage(idolImage)
 
 	if err != nil {
@@ -150,6 +156,7 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		return err
 	}
 
+	// Load frame image from the path
 	frame, err := gg.LoadImage(frameImage)
 
 	if err != nil {
@@ -157,6 +164,9 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		return err
 	}
 
+	// Execute an ImageMagick conversion on the dye mask colorizing it to
+	// the appropriate color in CMY. The output buffer is put through stdout,
+	// which we then read from.
 	buff, err := exec.Command("convert", maskImage, "-colorize", fmt.Sprintf("%f", colorC)+","+fmt.Sprintf("%f", colorM)+","+fmt.Sprintf("%f", colorY), "png:-").Output()
 
 	if err != nil {
@@ -164,6 +174,7 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		return err
 	}
 
+	// Decode the colored dye image from a buffer to an image
 	mask, _, err := image.Decode(bytes.NewReader(buff))
 
 	if err != nil {
@@ -171,6 +182,7 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		return err
 	}
 
+	// Distance from the top left edge to the idol image
 	idolOffsetX := 48.0
 	idolOffsetY := 54.5
 
@@ -179,8 +191,10 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		idolOffsetY = 120
 	}
 
+	// Draw the idol
 	dc.DrawImage(idol, int(math.Floor(idolOffsetX)), int(math.Floor(idolOffsetY)))
 
+	// If overlay is true, the dye image goes on top of the frame
 	if overlay {
 		dc.DrawImage(mask, 0, -1)
 		dc.DrawImage(frame, 0, -1)
@@ -189,21 +203,23 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		dc.DrawImage(mask, 0, -1)
 	}
 
+	// Set the text color
 	dc.SetRGB(float64(textColorR/255), float64(textColorG/255), float64(textColorB/255))
 
+	// x and y coordinates to place the name text
 	textX := 50.0
 	nameY := 436.0
-	serialY := 421.0
 
 	if large {
 		textX *= 2.2
 		nameY *= 2.2
-		serialY *= 2.2
 	}
 
+	// Draw the idol name
 	dc.DrawString(name, textX, nameY)
 
 	if hasGroup {
+		// Colorize the group logo, this is again put read through stdout
 		groupImage, err := exec.Command("convert", groupImage, "-channel", "RGB", "-negate", "-fill", "rgb("+strconv.Itoa(textColorR)+","+strconv.Itoa(textColorG)+","+strconv.Itoa(textColorB)+")", "-colorize", "100", "png:-").Output()
 
 		if err != nil {
@@ -211,12 +227,14 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 			return err
 		}
 
+		// Decode the colorized group logo from a buffer to an image
 		groupBytes, _, err := image.Decode(bytes.NewReader(groupImage))
 
 		dc.DrawImage(groupBytes, 0, 0)
 
 	}
 
+	// This is going to store the bytes of our image
 	writer := new(bytes.Buffer)
 
 	err = png.Encode(writer, dc.Image())
@@ -226,9 +244,13 @@ func Draw(name string, serial int, hasGroup bool, idolImage string, groupImage s
 		return nil
 	}
 
+	// Convert the buffer to Base64 so that we can read it from node
 	data := base64.StdEncoding.EncodeToString(writer.Bytes())
 
+	// Save it to the output
 	dc.SavePNG(outPath)
+
+	// Put the Base64 string through stdout so node can read it
 	fmt.Printf("%v", data)
 
 	if err != nil {
